@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>蓄电池热榜 · 每日储能与电池情报 | BATTERY HOT</title>
+<meta name="description" content="每日自动聚合储能与电池行业情报：精选、热点榜、电池行业日报。热度按独立信源报道数计算，逐条保留原文链接。" />
+<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='14' width='50' height='36' rx='6' fill='%230f9d76'/%3E%3Crect x='56' y='24' width='6' height='16' rx='3' fill='%230f9d76'/%3E%3Cpath d='M30 20 L22 36 h6 l-4 12 12-17h-6z' fill='%23fff'/%3E%3C/svg%3E" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#" aria-label="首页">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="26" height="26"><rect x="3" y="16" width="46" height="32" rx="5" fill="currentColor" opacity=".18"/><rect x="6" y="19" width="40" height="26" rx="4" fill="currentColor"/><path d="M31 23 L22 37 h7 l-5 10 13-15 h-7z" fill="#fff"/><rect x="50" y="27" width="5" height="10" rx="2" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-text">
+        <b>蓄电池热榜</b>
+        <small>BATTERY HOT · 每日储能与电池情报</small>
+      </span>
+    </a>
+
+    <nav class="tabs" role="tablist" aria-label="板块">
+      <button class="tab is-active" data-target="picked" role="tab">精选</button>
+      <button class="tab" data-target="hot" role="tab">热点榜</button>
+      <button class="tab" data-target="daily" role="tab">电池行业日报</button>
+    </nav>
+
+    <div class="header-tools">
+      <label class="search">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16 L21 21" stroke="currentColor" stroke-width="1.8"/></svg>
+        <input id="search" type="search" placeholder="搜索标题 / 标签" autocomplete="off" />
+      </label>
+      <button id="themeBtn" class="icon-btn" title="切换明暗主题" aria-label="切换主题">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="ticker"><div class="wrap ticker-inner" id="ticker"></div></div>
+</header>
+
+<main class="wrap">
+  <section id="picked" class="section is-visible" aria-label="精选">
+    <div class="section-head">
+      <div class="head-copy">
+        <div class="eyebrow" id="issueLine"></div>
+        <h1 class="hero-title" id="headline"></h1>
+        <p class="hero-lead" id="lead"></p>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div id="pickedBody"></div>
+    <p class="empty-tip" id="emptyTip" hidden>没有匹配的内容，换个关键词试试。</p>
+  </section>
+
+  <section id="hot" class="section" aria-label="热点榜">
+    <div class="hot-layout">
+      <div class="hot-main">
+        <div class="section-head compact">
+          <div class="head-copy">
+            <div class="eyebrow">当前热点</div>
+            <h2 class="h2">储能与电池热点榜</h2>
+            <p class="section-sub">热度 = 独立信源报道数 · 每日更新 · <span id="hotDate"></span></p>
+          </div>
+          <span class="live-dot">自动聚合</span>
+        </div>
+        <div id="hotList" class="hot-list"></div>
+      </div>
+      <aside class="rail" id="rail"></aside>
+    </div>
+  </section>
+
+  <section id="daily" class="section" aria-label="电池行业日报">
+    <article class="daily" id="dailyBody"></article>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div>
+      <div class="foot-brand">蓄电池热榜 <span>BATTERY HOT</span></div>
+      <p class="foot-note">本站内容为公开信息聚合与整理，热度为独立信源报道数（同一事件被几家不同机构报道就记几分），每条均保留原文链接，仅供行业信息参考，不构成投资建议。</p>
+    </div>
+    <div class="foot-meta">
+      <span id="footIssue"></span>
+      <span class="dot">·</span>
+      <span>每日 08:00 自动更新</span>
+    </div>
+  </div>
+</footer>
+
+<div class="drawer-backdrop" id="backdrop" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog">
+  <button class="drawer-close" id="drawerClose" aria-label="关闭">×</button>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<script src="data/news.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
