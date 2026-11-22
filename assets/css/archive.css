@@ -1,0 +1,37 @@
+/* =========================================================
+   蓄电池热榜 — 日报归档（往期 / 月报 / 年报）
+   ========================================================= */
+.daily-layout{display:grid; grid-template-columns:minmax(0,1fr) 268px; gap:40px; align-items:start}
+.daily{max-width:none}
+.archive-rail{position:sticky; top:104px; display:flex; flex-direction:column; gap:12px;
+  max-height:calc(100vh - 130px); overflow:auto; padding-bottom:10px}
+.arch-intro .note{font-size:11.5px; line-height:1.7; color:var(--muted); margin:8px 0 0}
+.arch-list{display:flex; flex-direction:column; gap:2px; margin-top:10px}
+.arch-item{display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+  border:0; background:none; color:var(--ink-2); font-family:inherit; font-size:12.5px;
+  padding:7px 9px; border-radius:8px; cursor:pointer; text-align:left;
+  transition:background .15s, color .15s}
+.arch-item:hover{background:var(--panel-2); color:var(--ink)}
+.arch-item.is-active{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+.arch-item.is-loading{opacity:.45}
+.arch-item.is-error{color:var(--hot)}
+.arch-kind{font-size:10px; letter-spacing:.06em; color:var(--muted);
+  border:1px solid var(--line); border-radius:4px; padding:1px 5px}
+.daily-toolbar{display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px; font-size:11.5px; color:var(--muted)}
+.dt-back{border:1px solid var(--line-strong); background:var(--panel); color:var(--ink);
+  border-radius:999px; padding:4px 12px; font:inherit; font-size:11.5px; cursor:pointer}
+.dt-back:hover{border-color:var(--accent); color:var(--accent-ink)}
+.d-label .d-note{font-size:10px; letter-spacing:.08em; color:var(--muted);
+  font-weight:400; margin-left:6px}
+.d-points{margin:0; padding-left:16px; display:flex; flex-direction:column; gap:6px}
+.d-points li{font-size:13px; line-height:1.65; color:var(--ink-2)}
+.d-points li::marker{color:var(--accent)}
+.d-empty{color:var(--muted); font-size:12.5px}
+@media (max-width: 1020px){
+  .daily-layout{grid-template-columns:1fr; gap:18px}
+  .archive-rail{position:static; max-height:none; order:-1;
+    flex-direction:row; flex-wrap:wrap}
+  .archive-rail .panel{flex:1 1 220px}
+  .arch-list{max-height:200px; overflow:auto}
+}
