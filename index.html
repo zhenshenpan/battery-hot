@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>蓄电池热榜 · 每日储能与电池情报 | BATTERY HOT</title>
-<meta name="description" content="每日自动聚合储能与电池行业情报：精选、热点榜、电池行业日报。热度按独立信源报道数计算，逐条保留原文链接。" />
+<title>蓄电池热榜 · 每日蓄电池情报 | BATTERY HOT</title>
+<meta name="description" content="每日聚合蓄电池行业情报：精选、热点榜、电池行业日报。覆盖锂电、钠电、固态、铅酸与储能市场。" />
 <link rel="stylesheet" href="assets/css/style.css" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='14' width='50' height='36' rx='6' fill='%230f9d76'/%3E%3Crect x='56' y='24' width='6' height='16' rx='3' fill='%230f9d76'/%3E%3Cpath d='M30 20 L22 36 h6 l-4 12 12-17h-6z' fill='%23fff'/%3E%3C/svg%3E" />
 </head>
@@ -17,7 +17,7 @@
       </span>
       <span class="brand-text">
         <b>蓄电池热榜</b>
-        <small>BATTERY HOT · 每日储能与电池情报</small>
+        <small>BATTERY HOT · 每日蓄电池情报</small>
       </span>
     </a>
 
@@ -41,6 +41,7 @@
 </header>
 
 <main class="wrap">
+  <!-- 精选 -->
   <section id="picked" class="section is-visible" aria-label="精选">
     <div class="section-head">
       <div class="head-copy">
@@ -54,16 +55,17 @@
     <p class="empty-tip" id="emptyTip" hidden>没有匹配的内容，换个关键词试试。</p>
   </section>
 
+  <!-- 热点榜 -->
   <section id="hot" class="section" aria-label="热点榜">
     <div class="hot-layout">
       <div class="hot-main">
         <div class="section-head compact">
           <div class="head-copy">
             <div class="eyebrow">当前热点</div>
-            <h2 class="h2">储能与电池热点榜</h2>
-            <p class="section-sub">热度 = 独立信源报道数 · 每日更新 · <span id="hotDate"></span></p>
+            <h2 class="h2">蓄电池行业热点榜</h2>
+            <p class="section-sub">按多源报道量加权排序，每日更新 · <span id="hotDate"></span></p>
           </div>
-          <span class="live-dot">自动聚合</span>
+          <span class="live-dot">实时聚合</span>
         </div>
         <div id="hotList" class="hot-list"></div>
       </div>
@@ -71,8 +73,12 @@
     </div>
   </section>
 
+  <!-- 电池行业日报 -->
   <section id="daily" class="section" aria-label="电池行业日报">
-    <article class="daily" id="dailyBody"></article>
+    <div class="daily-layout">
+      <article class="daily" id="dailyBody"></article>
+      <aside class="archive-rail" id="archiveRail" aria-label="往期日报"></aside>
+    </div>
   </section>
 </main>
 
@@ -80,16 +86,17 @@
   <div class="wrap footer-inner">
     <div>
       <div class="foot-brand">蓄电池热榜 <span>BATTERY HOT</span></div>
-      <p class="foot-note">本站内容为公开信息聚合与整理，热度为独立信源报道数（同一事件被几家不同机构报道就记几分），每条均保留原文链接，仅供行业信息参考，不构成投资建议。</p>
+      <p class="foot-note">本站内容为公开信息聚合与整理，热度为多源报道加权值，价格与招中标数据引自公开披露，仅供行业信息参考，不构成投资建议。</p>
     </div>
     <div class="foot-meta">
       <span id="footIssue"></span>
       <span class="dot">·</span>
-      <span>每日 08:00 自动更新</span>
+      <span>每日更新</span>
     </div>
   </div>
 </footer>
 
+<!-- 详情抽屉 -->
 <div class="drawer-backdrop" id="backdrop" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog">
   <button class="drawer-close" id="drawerClose" aria-label="关闭">×</button>
