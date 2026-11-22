@@ -1,4 +1,6 @@
-/* 蓄电池热榜 · 前端渲染 */
+/* =========================================================
+   蓄电池热榜 · 前端渲染
+   ========================================================= */
 (function () {
   "use strict";
 
@@ -8,6 +10,7 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+  /* ---------- helpers ---------- */
   const BADGE_COLORS = [
     "#dd5a2a", "#0f9d76", "#2f6bd8", "#7a5cd6", "#2b8a8a",
     "#b4802a", "#4a7a2f", "#a8456b", "#465a8a", "#8a5a2f",
@@ -24,6 +27,9 @@
   }
   function esc(s = "") {
     return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  }
+  function num(n) {
+    return Number(n).toLocaleString("en-US");
   }
   function sparkPath(seedStr) {
     let s = hashCode(seedStr);
@@ -48,7 +54,7 @@
     </svg>`;
   }
 
-  /* header / meta */
+  /* ---------- header / meta ---------- */
   $("#issueLine").textContent = `${D.issue} · ${D.dateCN} ${D.weekday}`;
   $("#headline").textContent = D.headline;
   $("#lead").textContent = D.lead;
@@ -57,8 +63,9 @@
     .join("");
   $("#hotDate").textContent = `${D.dateCN} ${D.weekday}`;
   $("#footIssue").textContent = `${D.issue} · ${D.dateCN}`;
-  document.title = `蓄电池热榜 ${D.dateCN} | 储能与电池每日情报`;
+  document.title = `蓄电池热榜 · ${D.issue} | ${D.dateCN}`;
 
+  /* ticker */
   const ticker = $("#ticker");
   if (!D.prices || !D.prices.length) {
     ticker.parentElement.style.display = "none";
@@ -71,7 +78,7 @@
       .join("");
   }
 
-  /* 精选 */
+  /* ---------- 精选 ---------- */
   const [feat, ...rest] = D.picked;
 
   function renderFeature(p) {
@@ -125,7 +132,7 @@
   $("#pickedBody").innerHTML =
     renderFeature(feat) + `<div class="grid">${rest.map(renderCard).join("")}</div>`;
 
-  /* 热点榜 */
+  /* ---------- 热点榜 ---------- */
   function trendMark(t) {
     if (t === "up") return `<span class="trend up">▲ 上升</span>`;
     if (t === "down") return `<span class="trend down">▼ 回落</span>`;
@@ -157,7 +164,7 @@
     })
     .join("");
 
-  /* 侧栏 */
+  /* ---------- 侧栏 ---------- */
   const maxCat = Math.max(...D.categories.map((c) => c.count));
   const pricePanel = D.prices && D.prices.length
     ? `<div class="panel">
@@ -205,8 +212,9 @@
     $$(".bar-fill").forEach((b) => (b.style.width = b.dataset.w + "%"));
   });
 
-  /* 日报 */
-  const dl = D.daily;
+  /* ---------- 日报 ---------- */
+  const DAILY_CACHE = (window.BATTERY_DAILY = window.BATTERY_DAILY || {});
+  let currentKey = null;
   function sectionHTML(s, i) {
     const strip = s.points
       ? `<div class="data-strip">${s.points
@@ -241,32 +249,124 @@
     </table>`;
   }
 
-  $("#dailyBody").innerHTML = `
+  const TODAY_VIEW = {
+    key: D.date, type: "day",
+    label: `${D.dateCN} ${D.weekday}`,
+    dateCN: D.dateCN, weekday: D.weekday, issue: D.issue, updatedAt: D.updatedAt,
+    stats: D.stats, categories: D.categories, daily: D.daily,
+  };
+  if (!DAILY_CACHE[D.date]) DAILY_CACHE[D.date] = TODAY_VIEW;
+
+  function dailyView(o) {
+    const d = o.daily || {};
+    const archived = o.key !== D.date;
+    const secs = d.sections || [];
+    const tables = d.tables || [];
+    return `
+    <div class="daily-toolbar">
+      <span class="dt-label">${archived ? "正在查看往期" : "最新一期"}</span>
+      ${archived ? `<button class="dt-back" type="button">返回最新</button>` : ""}
+    </div>
     <header class="daily-head">
-      <div class="daily-kicker">${esc(D.issue)} · ${esc(D.dateCN)} ${esc(D.weekday)}</div>
-      <h1>${esc(dl.title)}</h1>
-      <p class="daily-dek">${esc(dl.dek)}</p>
+      <div class="daily-kicker">${esc(o.issue || "")}${o.dateCN ? " · " + esc(o.dateCN) : ""}${o.weekday ? " " + esc(o.weekday) : ""}</div>
+      <h1>${esc(d.title || "储能与电池行业日报")}</h1>
+      <p class="daily-dek">${esc(d.dek || "")}</p>
       <div class="daily-sign">
-        ${D.categories.map((c) => `<span class="chip tag">${esc(c.name)} ${c.count}</span>`).join("")}
-        <span>更新 ${esc(D.updatedAt || "")}</span>
+        ${(o.categories || []).map((c) => `<span class="chip tag">${esc(c.name)} ${c.count}</span>`).join("")}
+        ${o.updatedAt ? `<span>生成 ${esc(o.updatedAt)}</span>` : ""}
       </div>
     </header>
-    ${dl.sections.map(sectionHTML).join("")}
+    ${secs.map(sectionHTML).join("")}
     ${
-      dl.tables && dl.tables.length
+      tables.length
         ? `<div class="daily-section">
-        <div class="sec-title"><span class="sec-no">${String(dl.sections.length + 1).padStart(2, "0")}</span><h3>数据附录</h3></div>
-        ${dl.tables.map(tableHTML).join("")}
+        <div class="sec-title"><span class="sec-no">${String(secs.length + 1).padStart(2, "0")}</span><h3>数据附录</h3></div>
+        ${tables.map(tableHTML).join("")}
         <p class="note" style="margin-top:12px">
           注：以上数字由标题自动抽取，可能与正文口径存在差异，引用前请点开原文核对。
         </p>
       </div>`
         : ""
     }
-    <div class="end-mark">${esc(dl.end || "")}</div>
-  `;
+    <div class="end-mark">${esc(d.end || "")}</div>`;
+  }
 
-  /* tabs */
+  function archGroup(title, list) {
+    if (!list.length) return "";
+    return `<div class="panel arch-group">
+      <h4>${title}</h4>
+      <div class="arch-list">${list
+        .map(
+          (x) =>
+            `<button class="arch-item${x.key === currentKey ? " is-active" : ""}" type="button" data-key="${esc(x.key)}">
+              <span class="arch-label">${esc(x.label)}</span>
+              <span class="arch-kind">${x.type === "month" ? "月报" : x.type === "year" ? "年报" : ""}</span>
+            </button>`
+        )
+        .join("")}</div>
+    </div>`;
+  }
+
+  function renderRail() {
+    const a = D.archive || [];
+    const days = a.filter((x) => x.type === "day");
+    const months = a.filter((x) => x.type === "month");
+    const years = a.filter((x) => x.type === "year");
+    $("#archiveRail").innerHTML = `
+      <div class="panel arch-intro">
+        <h4>期次导航</h4>
+        <p class="note">日报每天一期；月报、年报由历史快照自动汇总，可以回看整段时间里反复出现的主线。</p>
+      </div>
+      ${archGroup("往期日报", days)}
+      ${archGroup("月度汇总", months)}
+      ${archGroup("年度汇总", years)}
+    `;
+  }
+
+  function loadArchive(key) {
+    if (DAILY_CACHE[key]) return Promise.resolve(DAILY_CACHE[key]);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = `data/daily/${key}.js`;
+      s.onload = () => (DAILY_CACHE[key] ? resolve(DAILY_CACHE[key]) : reject(new Error("empty")));
+      s.onerror = () => reject(new Error("load"));
+      document.head.appendChild(s);
+    });
+  }
+
+  function renderDaily(obj, key) {
+    currentKey = key || obj.key;
+    $("#dailyBody").innerHTML = dailyView(obj);
+    $$(".arch-item").forEach((b) => b.classList.toggle("is-active", b.dataset.key === currentKey));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  renderRail();
+  renderDaily(TODAY_VIEW, D.date);
+
+  $("#archiveRail").addEventListener("click", (e) => {
+    const btn = e.target.closest(".arch-item");
+    if (!btn || btn.dataset.key === currentKey) return;
+    const key = btn.dataset.key;
+    btn.classList.add("is-loading");
+    loadArchive(key)
+      .then((obj) => {
+        btn.classList.remove("is-loading");
+        renderDaily(obj, key);
+      })
+      .catch(() => {
+        btn.classList.remove("is-loading");
+        btn.classList.add("is-error");
+        const tip = $(".arch-intro .note");
+        if (tip) tip.textContent = "该期数据读取失败，可能尚未生成该期文件，可先看最新一期。";
+      });
+  });
+  $("#dailyBody").addEventListener("click", (e) => {
+    if (e.target.closest(".dt-back")) renderDaily(TODAY_VIEW, D.date);
+  });
+
+
+  /* ---------- tabs ---------- */
   const tabs = $$(".tab");
   const sections = $$(".section");
   function activate(target, push = true) {
@@ -281,7 +381,7 @@
     if (["picked", "hot", "daily"].includes(target)) activate(target, false);
   }
 
-  /* drawer */
+  /* ---------- drawer ---------- */
   const drawer = $("#drawer");
   const backdrop = $("#backdrop");
   let lastFocus = null;
@@ -290,7 +390,7 @@
     let item = D.picked.find((p) => p.id === id);
     if (!item && id.startsWith("h")) {
       const h = D.hot.find((x) => "h" + x.rank === id);
-      if (h) item = Object.assign({ kicker: h.category, tags: [h.category] }, h);
+      if (h) item = { ...h, kicker: h.category, tags: [h.category], time: h.time };
     }
     if (!item) return;
     const srcLinks = (item.sources || [])
@@ -307,9 +407,19 @@
       </div>
       <h2>${esc(item.title)}</h2>
       <div class="d-sec">
-        <div class="d-label">摘要</div>
-        <p>${esc(item.summary || "")}</p>
+        <div class="d-label">摘要 <span class="d-note">自动提炼</span></div>
+        ${item.summary
+          ? `<p>${esc(item.summary)}</p>`
+          : `<p class="d-empty">这一条只抓到标题，正文里没有可提炼的段落，请直接看下方原文。</p>`}
       </div>
+      ${
+        (item.points || []).length
+          ? `<div class="d-sec">
+        <div class="d-label">关键信息</div>
+        <ul class="d-points">${item.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+      </div>`
+          : ""
+      }
       ${item.why ? `<div class="d-sec"><div class="d-label">多源情况</div><p class="d-why">${esc(item.why)}</p></div>` : ""}
       <div class="d-sec">
         <div class="d-label">信息来源</div>
@@ -339,7 +449,7 @@
     if (e.key === "Escape" && !drawer.hidden) closeDrawer();
   });
 
-  /* search */
+  /* ---------- search ---------- */
   const search = $("#search");
   search.addEventListener("input", () => {
     const q = search.value.trim().toLowerCase();
@@ -356,7 +466,7 @@
     if (tip) tip.hidden = !(active.id === "picked" && q && hits === 0);
   });
 
-  /* theme */
+  /* ---------- theme ---------- */
   const themeKey = "batteryhot-theme";
   const saved = localStorage.getItem(themeKey);
   if (saved) document.documentElement.dataset.theme = saved;
