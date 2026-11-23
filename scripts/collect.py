@@ -3,7 +3,7 @@
 """
 蓄电池热榜 · 采集管线
 抓取 5 个垂直信源 -> 标题聚类去重 -> 独立信源数作为热度 -> 摘要提炼 ->
-生成 data/news.js、data/daily/*.js（日报/月报/年报）、data/history/*.json
+DeepSeek 评分 -> 生成 data/news.js、data/daily/*.js（日报/月报/年报）、data/history/*.json
 只用标准库：python scripts/collect.py
 """
 
@@ -300,7 +300,7 @@ def _split_sents(text):
     out = []
     for p in re.split(r"[。！？!?；;]", text):
         s = _clean_sent(p)
-        if 12 <= len(s):
+        if 12 <= len(s) and "\ufffd" not in s:
             out.append(s)
     return out
 
@@ -587,6 +587,88 @@ def archive_index(today):
     return days[:30] + months + years
 
 
+# ---------------------------------------------------------------- 近 7 天热度
+def _hist_by_day():
+    out = {}
+    try:
+        files = sorted(f for f in os.listdir(HIST_DIR) if f.endswith(".json"))
+    except Exception:
+        return out
+    for f in files:
+        try:
+            with open(os.path.join(HIST_DIR, f), encoding="utf-8") as fp:
+                rows = json.load(fp)
+        except Exception:
+            continue
+        d = {}
+        for r in rows:
+            k = norm(r.get("title", ""))[:40]
+            if k:
+                d[k] = max(d.get(k, 0), r.get("heat", 1))
+        out[f[:-5]] = d
+    return out
+
+
+def trend_series(g, hist, today, days=7):
+    """该事件最近 N 天每天被多少个信源报道；没有出现的日子给 null"""
+    key = norm(g["title"])[:40]
+    tstr = today.strftime("%Y-%m-%d")
+    pts = []
+    for off in range(days - 1, -1, -1):
+        day = (today - datetime.timedelta(days=off)).strftime("%Y-%m-%d")
+        h = g["heat"] if day == tstr else hist.get(day, {}).get(key)
+        pts.append(dict(d=day[5:], h=h))
+    return pts
+
+
+# ---------------------------------------------------------------- AI 评分
+AI_SYS = (
+    "你是储能与电池行业的资深分析师。基于每条信息的标题、摘要、报道信源与品类，给出三项判断：\n"
+    "1) score：0-100 分，衡量信息成色——事实密度（有没有具体数字、时间、主体）、影响面、可核对性；"
+    "纯标题党、厂商通稿、营销软文、旧闻重发要显著压低（40 分以下）。\n"
+    "2) importance：一句话说明这条对该领域的重要性，25 字以内，不要复述标题。\n"
+    "3) caveats：0-3 条「这篇需要留个心眼」的地方，例如“疑似厂商通稿”“单一信源未获交叉印证”"
+    "“数据口径未说明”“概念先行、无落地证据”“旧闻重发”“标题放大结论”。没有问题时给空数组。\n"
+    "只输出 JSON 对象：{\"items\":[{\"id\":\"p1\",\"score\":72,\"importance\":\"...\",\"caveats\":[\"...\"]}]}，不要任何解释文字。"
+)
+
+
+def ai_score(entries):
+    key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
+    if not key or not entries:
+        print("[ai] 未配置 DEEPSEEK_API_KEY，跳过 AI 评分")
+        return {}
+    body = json.dumps({
+        "model": "deepseek-chat",
+        "messages": [{"role": "system", "content": AI_SYS},
+                     {"role": "user", "content": json.dumps(entries, ensure_ascii=False)}],
+        "temperature": 0.2,
+        "max_tokens": 1600,
+        "response_format": {"type": "json_object"},
+    }, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request("https://api.deepseek.com/chat/completions", data=body,
+                                 headers={"Content-Type": "application/json",
+                                          "Authorization": "Bearer " + key})
+    try:
+        with urllib.request.urlopen(req, timeout=90) as r:
+            resp = json.loads(r.read().decode("utf-8", "ignore"))
+        data = json.loads(resp["choices"][0]["message"]["content"])
+        items = data.get("items") or data.get("data") or []
+        out = {}
+        for it in items:
+            if not isinstance(it, dict) or "id" not in it:
+                continue
+            out[str(it["id"])] = dict(score=int(it.get("score", 0) or 0),
+                                      importance=str(it.get("importance", "") or ""),
+                                      caveats=[str(c) for c in (it.get("caveats") or [])][:3])
+        usage = resp.get("usage") or {}
+        print(f"[ai] scored={len(out)} tokens={usage.get('total_tokens')}")
+        return out
+    except Exception as e:
+        print(f"[ai] 评分失败：{e!r}")
+        return {}
+
+
 # ---------------------------------------------------------------- 日报排版
 CAT_LABELS = {
     "招中标": "招中标：价格与规模的最新坐标",
@@ -712,6 +794,9 @@ def main():
     today = TODAY.replace(tzinfo=None)
     today_str = today.strftime("%Y-%m-%d")
     prev = load_prev(today_str)
+    hist = _hist_by_day()
+    for g in groups[:30]:
+        g["trend"] = trend_series(g, hist, today)
 
     def trend_of(g):
         p = prev.get(g["title"])
@@ -735,8 +820,8 @@ def main():
         picked_out.append(dict(
             id=f"p{i}", kicker=g["category"], title=g["title"],
             summary=g["summary"] or "该条仅有标题级信息，正文摘要待补，请点开来源核对原文。",
-            points=(g.get("digest") or {}).get("points", []), heat=str(g["heat"]),
-            time=mmdd(g["date"]), tags=g["tags"], sources=g["sources"],
+            points=(g.get("digest") or {}).get("points", []), heat=str(g["heat"]), time=mmdd(g["date"]),
+            tags=g["tags"], sources=g["sources"], trend=g.get("trend"),
             why=f"本期由 {g['heat']} 个独立信源报道" + (
                 "，属跨平台高频事件，建议结合多家原文交叉核对。" if g["heat"] >= 2
                 else "，为单一信源首发，引用前请核对原文口径。")))
@@ -751,10 +836,26 @@ def main():
         if len(ranked) >= 15:
             break
     for i, g in enumerate(ranked, 1):
-        hot.append(dict(rank=i, title=g["title"], category=g["category"], heat=g["heat"],
-                        trend=trend_of(g), time=mmdd(g["date"]), isNew=(g["title"] not in prev),
-                        sources=g["sources"], summary=g.get("summary") or "",
+        hot.append(dict(id=f"h{i}", rank=i, title=g["title"], category=g["category"], heat=g["heat"],
+                        trend=trend_of(g), series=g.get("trend"), time=mmdd(g["date"]),
+                        isNew=(g["title"] not in prev), sources=g["sources"],
+                        summary=g.get("summary") or "",
                         points=(g.get("digest") or {}).get("points", [])))
+
+    entries = []
+    for p in picked_out:
+        entries.append(dict(id=p["id"], title=p["title"], summary=p["summary"][:90],
+                            category=p["kicker"], sources=[s["name"] for s in p["sources"]]))
+    for h in hot:
+        entries.append(dict(id=h["id"], title=h["title"], summary=(h["summary"] or "")[:90],
+                            category=h["category"], sources=[s["name"] for s in h["sources"]]))
+    scores = ai_score(entries)
+    for p in picked_out + hot:
+        a = scores.get(p["id"])
+        if a:
+            p["score"] = a["score"]
+            p["importance"] = a["importance"]
+            p["caveats"] = a["caveats"]
 
     cat_counts = {}
     for g in groups:
