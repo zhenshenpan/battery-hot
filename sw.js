@@ -1,6 +1,6 @@
 /* 蓄电池热榜 · Service Worker
    静态资源 cache-first；data/ 下的内容 network-first，保证每天更新不被旧缓存挡住 */
-const CACHE = "battery-hot-v5";
+const CACHE = "battery-hot-v6";
 const SHELL = [
   "./",
   "./index.html",
@@ -34,6 +34,8 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // 安装包体积大，交给浏览器原生下载，不进缓存
+  if (url.pathname.endsWith(".apk")) return;
 
   const isData = url.pathname.includes("data/") || url.pathname.endsWith(".webmanifest") ||
     url.pathname.endsWith("index.html") || url.pathname.endsWith("sw.js") ||

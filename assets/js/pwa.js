@@ -1,5 +1,5 @@
 /* =========================================================
-   PWA：安装提示 + Service Worker + APK 下载
+   PWA：安装提示 + Service Worker + APK 状态
    ========================================================= */
 (function () {
   "use strict";
@@ -47,8 +47,6 @@
     if (standalone) {
       installBtn.textContent = "已安装";
       installBtn.disabled = true;
-    } else {
-      installBtn.textContent = "安装到桌面";
     }
     installBtn.addEventListener("click", async () => {
       if (!deferred) {
@@ -62,15 +60,25 @@
     });
   }
 
-  /* ---- APK：指向已发布的安装包 ---- */
-  const APK_URL = "https://github.com/zhenshenpan/battery-hot/releases/download/v1.0.0/battery-hot.apk";
+  /* ---- APK：与站点同域名分发，无需翻墙 ---- */
+  const APK_URL = "apk/battery-hot.apk";
+  const APK_BACKUP = "https://github.com/zhenshenpan/battery-hot/releases/download/v1.0.0/battery-hot.apk";
   if (apkBtn) {
-    apkBtn.textContent = "下载 APK";
+    apkBtn.textContent = "下载应用";
     apkBtn.classList.remove("is-disabled");
     apkBtn.setAttribute("href", APK_URL);
-    apkBtn.removeAttribute("download");
-    apkBtn.setAttribute("rel", "noopener");
+    apkBtn.setAttribute("download", "battery-hot.apk");
     apkBtn.removeAttribute("aria-disabled");
+    // 站点里没有安装包时退回 GitHub Release（该线路在国内常需代理）
+    fetch(APK_URL, { method: "HEAD" })
+      .then((r) => {
+        if (r.ok) return;
+        apkBtn.setAttribute("href", APK_BACKUP);
+        apkBtn.removeAttribute("download");
+        apkBtn.setAttribute("rel", "noopener");
+        setNote("站内安装包暂缺，已切到备用下载地址。");
+      })
+      .catch(() => {});
   }
 
   if (!standalone && !("serviceWorker" in navigator)) {
