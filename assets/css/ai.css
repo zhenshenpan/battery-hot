@@ -1,0 +1,42 @@
+/* =========================================================
+   AI 评分层样式
+   ========================================================= */
+.ai-badge{display:inline-flex; align-items:center; gap:4px; font-family:var(--mono);
+  font-size:11px; font-weight:600; letter-spacing:.02em; padding:2px 7px; border-radius:999px;
+  border:1px solid var(--line-strong); color:var(--ink-2); background:var(--panel); white-space:nowrap}
+.ai-badge.ai-high{border-color:rgba(15,157,118,.45); color:var(--accent-ink); background:var(--accent-soft)}
+.ai-badge.ai-mid{border-color:rgba(180,128,42,.4); color:#8a6320}
+.ai-badge.ai-low{border-color:rgba(221,90,42,.4); color:var(--hot); background:var(--hot-soft)}
+.ai-badge .ai-flag{font-style:normal; font-size:9px; opacity:.85;
+  border:1px solid currentColor; border-radius:3px; padding:0 3px; line-height:1.4}
+
+.trend-box{width:100%}
+.trend-chart{width:100%}
+.trend-cap{font-size:10px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-bottom:6px}
+.trend-chart svg{width:100%; height:56px; display:block}
+.trend-labels{display:flex; justify-content:space-between; margin-top:4px}
+.trend-labels .tl{font-family:var(--mono); font-size:9px; color:var(--muted); opacity:.7}
+.trend-labels .tl.on{opacity:1; color:var(--ink)}
+.trend-empty{font-size:11px; color:var(--muted); line-height:1.6; border:1px dashed var(--line-strong);
+  border-radius:10px; padding:10px 12px; background:var(--panel-2)}
+.trend-empty b{font-family:var(--mono); color:var(--ink); font-size:13px}
+
+.ai-block{display:grid; grid-template-columns:86px minmax(0,1fr); gap:16px; align-items:start;
+  margin:16px 0 4px; padding:14px 16px; border-radius:12px; background:var(--panel-2);
+  border-left:3px solid var(--line-strong)}
+.ai-block.ai-high{border-left-color:var(--accent)}
+.ai-block.ai-mid{border-left-color:#b4802a}
+.ai-block.ai-low{border-left-color:var(--hot)}
+.ai-score-wrap{text-align:center}
+.ai-score-num{font-family:var(--serif); font-size:26px; line-height:1.1; font-weight:600}
+.ai-score-num small{font-size:10px; font-family:var(--sans); color:var(--muted); margin-left:1px}
+.ai-score-label{font-size:10px; letter-spacing:.08em; color:var(--muted); margin-top:4px}
+.ai-text .ai-k{font-size:10px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-bottom:3px}
+.ai-text .ai-v{font-size:13px; line-height:1.6; color:var(--ink); margin-bottom:10px}
+.ai-cav{margin:0; padding-left:15px; display:flex; flex-direction:column; gap:4px}
+.ai-cav li{font-size:12px; line-height:1.55; color:var(--hot)}
+.ai-cav-none{font-size:12px; color:var(--muted); margin:0}
+@media (max-width: 640px){
+  .ai-block{grid-template-columns:1fr; gap:10px}
+  .ai-score-wrap{text-align:left; display:flex; align-items:baseline; gap:8px}
+}
