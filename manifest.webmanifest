@@ -1,0 +1,37 @@
+{
+  "name": "蓄电池热榜 · 每日蓄电池情报",
+  "short_name": "蓄电池热榜",
+  "description": "每日聚合蓄电池与储能行业情报：精选、热点榜、电池行业日报。",
+  "id": "/battery-hot/",
+  "start_url": "/battery-hot/",
+  "scope": "/battery-hot/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f7f6f3",
+  "theme_color": "#0f9d76",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["news", "business"],
+  "icons": [
+    {
+      "src": "assets/img/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "热点榜",
+      "short_name": "热点",
+      "url": "/battery-hot/#hot",
+      "description": "当前蓄电池行业热点"
+    },
+    {
+      "name": "电池行业日报",
+      "short_name": "日报",
+      "url": "/battery-hot/#daily",
+      "description": "当日行业日报与往期归档"
+    }
+  ]
+}
