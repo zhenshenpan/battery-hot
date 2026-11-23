@@ -19,9 +19,9 @@ NEWS = os.path.join(DATA, "news.js")
 HIST = os.path.join(DATA, "history")
 DAILY = os.path.join(DATA, "daily")
 
-JUNK = re.compile(r"traceid|\.concat\(|function\s*\(|=>|\bvar\s+\w+\s*="
-                  r"|<script|<style|document\.|window\.|onclick|import\s|export\s|"
-                  r"|console\.|ajax|jQuery|\ufffd", re.I)
+JUNK = re.compile(r"traceid|\.concat\(|function\s*\(|=>|\bvar\s+\w+\s*=|"
+                  r"<script|<style|document\.|window\.|onclick|import\s|export\s|"
+                  r"console\.|ajax|jQuery|\ufffd", re.I)
 HAN = re.compile(r"[\u4e00-\u9fa5]")
 
 CAT_ORDER = ["招中标", "价格行情", "项目动态", "技术路线", "政策标准", "海外市场", "企业动态"]
@@ -64,10 +64,10 @@ def title_points(title):
 
 def clean_text(s):
     if not s:
-        return "", []
+        return ""
     parts = [p.strip() for p in re.split(r"[。！？]", s) if p.strip()]
     keep = [p for p in parts if not JUNK.search(p) and len(HAN.findall(p)) >= 6]
-    return ("。".join(keep) + "。") if keep else "", []
+    return ("。".join(keep) + "。") if keep else ""
 
 
 def ai_call(payload, max_tokens=1300):
@@ -170,7 +170,7 @@ def main():
     fixed = 0
     for coll in ("picked", "hot"):
         for it in news.get(coll, []):
-            s2, _ = clean_text(it.get("summary") or "")
+            s2 = clean_text(it.get("summary") or "")
             pts = [p for p in (it.get("points") or []) if not JUNK.search(p) and len(HAN.findall(p)) >= 4]
             if s2 != (it.get("summary") or "") or len(pts) != len(it.get("points") or []):
                 fixed += 1
