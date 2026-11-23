@@ -1,6 +1,6 @@
 /* 蓄电池热榜 · Service Worker
    静态资源 cache-first；data/ 下的内容 network-first，保证每天更新不被旧缓存挡住 */
-const CACHE = "battery-hot-v3";
+const CACHE = "battery-hot-v4";
 const SHELL = [
   "./",
   "./index.html",
@@ -38,7 +38,6 @@ self.addEventListener("fetch", (e) => {
   const isData = url.pathname.includes("data/") || url.pathname.endsWith(".webmanifest");
 
   if (isData) {
-    // 网络优先：新数据立刻可见，离线时回退到上次缓存
     e.respondWith(
       fetch(req)
         .then((res) => {
@@ -51,7 +50,6 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // 静态资源：缓存优先，后台更新
   e.respondWith(
     caches.match(req).then((hit) => {
       if (hit) {

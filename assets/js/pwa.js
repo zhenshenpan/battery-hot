@@ -1,5 +1,5 @@
 /* =========================================================
-   PWA：安装提示 + Service Worker + APK 状态
+   PWA：安装提示 + Service Worker + APK 下载
    ========================================================= */
 (function () {
   "use strict";
@@ -62,21 +62,15 @@
     });
   }
 
-  /* ---- APK：存在才放行，避免装成假按钮 ---- */
+  /* ---- APK：指向已发布的安装包 ---- */
+  const APK_URL = "https://github.com/zhenshenpan/battery-hot/releases/download/v1.0.0/battery-hot.apk";
   if (apkBtn) {
-    fetch("apk/battery-hot.apk", { method: "HEAD" })
-      .then((r) => {
-        if (r.ok) {
-          apkBtn.textContent = "下载 APK";
-          apkBtn.classList.remove("is-disabled");
-          apkBtn.setAttribute("href", "apk/battery-hot.apk");
-          apkBtn.setAttribute("download", "battery-hot.apk");
-          apkBtn.removeAttribute("aria-disabled");
-        } else {
-          apkBtn.textContent = "打包中";
-        }
-      })
-      .catch(() => { apkBtn.textContent = "打包中"; });
+    apkBtn.textContent = "下载 APK";
+    apkBtn.classList.remove("is-disabled");
+    apkBtn.setAttribute("href", APK_URL);
+    apkBtn.removeAttribute("download");
+    apkBtn.setAttribute("rel", "noopener");
+    apkBtn.removeAttribute("aria-disabled");
   }
 
   if (!standalone && !("serviceWorker" in navigator)) {
