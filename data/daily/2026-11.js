@@ -6,7 +6,7 @@ window.BATTERY_DAILY["2026-11"] = {
  "dateCN": "2026年11月月报",
  "weekday": "",
  "issue": "已归档",
- "updatedAt": "2026-11-23 15:57",
+ "updatedAt": "2026-11-23 16:02",
  "stats": [
   {
    "n": "3",
