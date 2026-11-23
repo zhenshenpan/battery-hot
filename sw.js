@@ -1,6 +1,6 @@
 /* 蓄电池热榜 · Service Worker
    静态资源 cache-first；data/ 下的内容 network-first，保证每天更新不被旧缓存挡住 */
-const CACHE = "battery-hot-v4";
+const CACHE = "battery-hot-v5";
 const SHELL = [
   "./",
   "./index.html",
@@ -35,7 +35,9 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  const isData = url.pathname.includes("data/") || url.pathname.endsWith(".webmanifest");
+  const isData = url.pathname.includes("data/") || url.pathname.endsWith(".webmanifest") ||
+    url.pathname.endsWith("index.html") || url.pathname.endsWith("sw.js") ||
+    url.pathname.endsWith(".css");
 
   if (isData) {
     e.respondWith(
