@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -74,11 +75,13 @@ public class DetailActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        JSONObject o;
+        final JSONObject o;
         try {
             o = new JSONObject(getIntent().getStringExtra("item"));
         } catch (Exception e) {
-            o = new JSONObject();
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
         }
 
         ScrollView sv = new ScrollView(this);
@@ -105,6 +108,23 @@ public class DetailActivity extends Activity {
             }
         });
         bar.addView(back);
+
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.leftMargin = dp(8);
+        final TextView favBtn = text(FavStore.has(this, o.optString("id")) ? "★ 已收藏" : "☆ 收藏", 12, C_ACCENT, true);
+        favBtn.setPadding(dp(10), dp(6), dp(10), dp(6));
+        favBtn.setBackground(round(C_ACCENT_BG, 12, 0, 0));
+        favBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean on = FavStore.toggle(DetailActivity.this, o);
+                favBtn.setText(on ? "★ 已收藏" : "☆ 收藏");
+                Toast.makeText(DetailActivity.this, on ? "已加入我的收藏" : "已移出收藏", Toast.LENGTH_SHORT).show();
+            }
+        });
+        bar.addView(favBtn, blp);
+
         bar.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
         bar.addView(text("蓄电池热榜", 12, C_SUB, true));
         root.addView(bar, new LinearLayout.LayoutParams(

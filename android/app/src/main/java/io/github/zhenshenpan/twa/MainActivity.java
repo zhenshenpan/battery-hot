@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
 
     private static final String DATA_URL = "https://zhenshenpan.github.io/battery-hot/data/app.json";
     private static final String CACHE_NAME = "app-cache.json";
+    private static final String[] TAB_KEYS = {"picked", "hot", "daily", "mine"};
 
     private static final int C_BG = 0xFFF5F6F8;
     private static final int C_CARD = 0xFFFFFFFF;
@@ -43,10 +44,11 @@ public class MainActivity extends Activity {
     private static final int C_ACCENT = 0xFF0F9D76;
     private static final int C_ACCENT_BG = 0xFFE7F5F0;
     private static final int C_CHIP = 0xFFF1F3F5;
+    private static final int C_STAR = 0xFFE0A100;
 
     private LinearLayout body;
     private TextView dateTv;
-    private TextView[] tabs = new TextView[3];
+    private TextView[] tabs = new TextView[4];
 
     private JSONObject data;
     private String tab = "picked";
@@ -62,6 +64,14 @@ public class MainActivity extends Activity {
         paintTabs();
         body.addView(plainCard("正在更新…"));
         loadData();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (data != null) {
+            render();
+        }
     }
 
     /* ---------------- 基础工具 ---------------- */
@@ -119,6 +129,22 @@ public class MainActivity extends Activity {
         Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
     }
 
+    private TextView starView(final JSONObject item) {
+        boolean on = FavStore.has(this, item.optString("id"));
+        TextView s = text(on ? "★" : "☆", 16, on ? C_STAR : C_SUB, true);
+        s.setPadding(dp(8), dp(3), dp(8), dp(3));
+        s.setBackground(round(on ? 0xFFFDF6E5 : 0x00000000, 8, on ? 1 : 0, 0xFFF0D9A8));
+        s.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean added = FavStore.toggle(MainActivity.this, item);
+                toast(added ? "已收藏" : "已取消收藏");
+                render();
+            }
+        });
+        return s;
+    }
+
     /* ---------------- 骨架 ---------------- */
 
     private void buildShell() {
@@ -141,8 +167,7 @@ public class MainActivity extends Activity {
         LinearLayout brandRow = new LinearLayout(this);
         brandRow.setOrientation(LinearLayout.HORIZONTAL);
         brandRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView brand = text("蓄电池热榜", 19, C_TEXT, true);
-        brandRow.addView(brand);
+        brandRow.addView(text("蓄电池热榜", 19, C_TEXT, true));
         brandRow.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
         TextView refresh = text("刷新", 12, C_ACCENT, true);
         refresh.setPadding(dp(12), dp(6), dp(12), dp(6));
@@ -167,19 +192,18 @@ public class MainActivity extends Activity {
         tlp.topMargin = dp(12);
         head.addView(tabRow, tlp);
 
-        String[] names = {"精选", "热点榜", "电池日报"};
-        final String[] keys = {"picked", "hot", "daily"};
-        for (int i = 0; i < 3; i++) {
-            TextView t = text(names[i], 13.5f, C_SUB, true);
+        String[] names = {"精选", "热点榜", "日报", "我的"};
+        for (int i = 0; i < 4; i++) {
+            TextView t = text(names[i], 13, C_SUB, true);
             t.setGravity(Gravity.CENTER);
             t.setPadding(0, dp(9), 0, dp(9));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             if (i > 0) {
-                lp.leftMargin = dp(8);
+                lp.leftMargin = dp(6);
             }
             t.setLayoutParams(lp);
-            final String k = keys[i];
+            final String k = TAB_KEYS[i];
             t.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -201,10 +225,8 @@ public class MainActivity extends Activity {
     }
 
     private void paintTabs() {
-        for (int i = 0; i < 3; i++) {
-            boolean active = (i == 0 && "picked".equals(tab))
-                    || (i == 1 && "hot".equals(tab))
-                    || (i == 2 && "daily".equals(tab));
+        for (int i = 0; i < 4; i++) {
+            boolean active = TAB_KEYS[i].equals(tab);
             tabs[i].setTextColor(active ? C_ACCENT : C_SUB);
             tabs[i].setBackground(round(active ? C_ACCENT_BG : C_CARD, 10, 0, 0));
         }
@@ -264,7 +286,7 @@ public class MainActivity extends Activity {
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(15000);
         conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("User-Agent", "BatteryHotApp/1.0.2");
+        conn.setRequestProperty("User-Agent", "BatteryHotApp/1.0.4");
         conn.setInstanceFollowRedirects(true);
         int code = conn.getResponseCode();
         if (code != 200) {
@@ -326,6 +348,8 @@ public class MainActivity extends Activity {
             renderPicked();
         } else if ("hot".equals(tab)) {
             renderHot();
+        } else if ("mine".equals(tab)) {
+            renderMine();
         } else {
             renderDaily();
         }
@@ -360,7 +384,7 @@ public class MainActivity extends Activity {
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setPadding(dp(16), dp(14), dp(16), dp(6));
         hero.addView(text(data.optString("issue", "今日精选"), 11, C_ACCENT, true));
-        TextView title = text(data.optString("headline"), 21, C_TEXT, true);
+        TextView title = text(data.optString("headline"), 20, C_TEXT, true);
         title.setPadding(0, dp(8), 0, 0);
         title.setLineSpacing(dp(4), 1.2f);
         hero.addView(title);
@@ -408,6 +432,32 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void renderMine() {
+        JSONArray favs = FavStore.list(this);
+        LinearLayout hero = new LinearLayout(this);
+        hero.setOrientation(LinearLayout.VERTICAL);
+        hero.setPadding(dp(16), dp(14), dp(16), dp(4));
+        hero.addView(text("本地收藏", 11, C_ACCENT, true));
+        TextView t = text("我的收藏", 20, C_TEXT, true);
+        t.setPadding(0, dp(6), 0, 0);
+        hero.addView(t);
+        hero.addView(text(favs.length() == 0
+                ? "存在本机，不上传服务器"
+                : ("共 " + favs.length() + " 条 · 存在本机，不上传服务器"), 11.5f, C_SUB, false));
+        body.addView(hero);
+
+        if (favs.length() == 0) {
+            body.addView(plainCard("还没有收藏。点任意卡片右上角的 ☆ 就会存到这里；长按卡片右上角星标会让它消失。"));
+            return;
+        }
+        for (int i = 0; i < favs.length(); i++) {
+            JSONObject o = favs.optJSONObject(i);
+            if (o != null) {
+                body.addView(newsCard(o, -1));
+            }
+        }
+    }
+
     private LinearLayout newsCard(final JSONObject o, int rank) {
         LinearLayout c = cardBox();
 
@@ -443,6 +493,9 @@ public class MainActivity extends Activity {
             top.addView(s, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         }
+
+        top.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
+        top.addView(starView(o));
         c.addView(top);
 
         TextView title = text(o.optString("title"), 17, C_TEXT, true);
@@ -487,7 +540,9 @@ public class MainActivity extends Activity {
         }
 
         c.setClickable(true);
-        c.setForeground(new RippleDrawable(ColorStateList.valueOf(0x14000000), null, null));
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            c.setForeground(new RippleDrawable(ColorStateList.valueOf(0x14000000), null, null));
+        }
         c.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
