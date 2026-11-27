@@ -1,0 +1,48 @@
+plugins {
+    id 'com.android.application'
+}
+
+def ksPath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release.jks"
+def ksFile = file(ksPath)
+
+android {
+    namespace 'io.github.zhenshenpan.twa'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "io.github.zhenshenpan.twa"
+        minSdk 23
+        targetSdk 34
+        versionCode 2
+        versionName "1.0.2"
+    }
+
+    signingConfigs {
+        if (ksFile.exists()) {
+            release {
+                storeFile ksFile
+                storePassword System.getenv("KEYSTORE_PASSWORD") ?: "batteryhot2026"
+                keyAlias System.getenv("KEY_ALIAS") ?: "batteryhot"
+                keyPassword System.getenv("KEY_PASSWORD") ?: "batteryhot2026"
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig ksFile.exists() ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}

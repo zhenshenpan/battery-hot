@@ -1,0 +1,64 @@
+name: 构建安卓安装包
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: 写入签名密钥
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | tr -d '\n\r ' | base64 -d > android/release.jks
+            ls -l android/release.jks
+            echo "使用正式签名"
+          else
+            echo "::warning::未配置 ANDROID_KEYSTORE_B64，本次使用调试签名（装到手机后无法覆盖升级）"
+          fi
+
+      - name: 编译安装包
+        working-directory: android
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/android/release.jks
+        run: gradle assembleRelease --no-daemon --console=plain
+
+      - name: 提交安装包
+        run: |
+          mkdir -p apk
+          cp android/app/build/outputs/apk/release/app-release.apk apk/battery-hot.apk
+          ls -l apk/battery-hot.apk
+          git config user.name "battery-hot-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add apk/battery-hot.apk
+          if git diff --cached --quiet; then
+            echo "安装包无变化"
+          else
+            git commit -m "build: 安卓安装包 $(date -u +%Y-%m-%d) v1.0.2"
+            for i in 1 2 3; do
+              if git push origin HEAD:main; then break; fi
+              git pull --rebase --autostash origin main || true
+              sleep $((i * 3))
+            done
+          fi
