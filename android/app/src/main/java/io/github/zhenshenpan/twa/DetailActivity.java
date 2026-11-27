@@ -222,10 +222,11 @@ public class DetailActivity extends Activity {
             root.addView(c);
         }
 
+        String firstUrl = "";
         JSONArray sources = o.optJSONArray("sources");
         if (sources != null && sources.length() > 0) {
             LinearLayout c = cardBox();
-            c.addView(text("信源原文", 13, C_TEXT, true));
+            c.addView(text("在应用内阅读原文", 13, C_TEXT, true));
             for (int i = 0; i < sources.length(); i++) {
                 JSONObject s = sources.optJSONObject(i);
                 if (s == null) {
@@ -235,7 +236,11 @@ public class DetailActivity extends Activity {
                 if (url.isEmpty()) {
                     continue;
                 }
-                TextView btn = text(s.optString("name", "原文") + " ↗", 12.5f, C_ACCENT, true);
+                if (firstUrl.isEmpty()) {
+                    firstUrl = url;
+                }
+                final String nm = s.optString("name", "原文");
+                TextView btn = text("阅读 · " + nm + "  ›", 12.5f, C_ACCENT, true);
                 btn.setPadding(dp(12), dp(9), dp(12), dp(9));
                 btn.setBackground(round(C_ACCENT_BG, 8, 0, 0));
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
@@ -244,15 +249,31 @@ public class DetailActivity extends Activity {
                 btn.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        try {
-                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                        } catch (Exception ignored) {
-                        }
+                        Intent it = new Intent(DetailActivity.this, ReaderActivity.class);
+                        it.putExtra("url", url);
+                        it.putExtra("name", nm);
+                        startActivity(it);
                     }
                 });
                 c.addView(btn, lp);
             }
             root.addView(c);
+        }
+
+        if (!firstUrl.isEmpty()) {
+            final String u = firstUrl;
+            TextView alt = text("改用系统浏览器打开这条", 10.5f, C_SUB, false);
+            alt.setPadding(dp(18), dp(12), dp(18), 0);
+            alt.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u)));
+                    } catch (Exception ignored) {
+                    }
+                }
+            });
+            root.addView(alt);
         }
 
         TextView foot = text("内容来自公开报道聚合，价格与招中标数据引自公开披露，仅供参考。", 10, C_SUB, false);
