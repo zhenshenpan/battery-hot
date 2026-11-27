@@ -54,6 +54,63 @@
     </svg>`;
   }
 
+  /* ---------- 收藏（只存本机） ---------- */
+  const FAV_KEY = "batteryhot-fav";
+  function favList() {
+    try {
+      const a = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+      return Array.isArray(a) ? a : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function favSave(a) {
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(a));
+    } catch (e) {}
+  }
+  function isFav(id) {
+    return favList().some((x) => x.item && x.item.id === id);
+  }
+  function starHTML(id) {
+    const on = isFav(id);
+    return `<button class="fav-btn${on ? " is-on" : ""}" data-fav="${esc(id)}" type="button" title="${on ? "取消收藏" : "收藏"}" aria-label="收藏">${on ? "★" : "☆"}</button>`;
+  }
+  function slimItem(item) {
+    return {
+      id: item.id,
+      title: item.title,
+      kicker: item.kicker || item.category || "",
+      summary: item.summary || "",
+      points: item.points || [],
+      heat: item.heat || "",
+      time: item.time || "",
+      tags: item.tags || [],
+      sources: item.sources || [],
+      why: item.why || "",
+      score: item.score,
+      importance: item.importance || "",
+      caveats: item.caveats || [],
+    };
+  }
+  function toggleFav(item) {
+    const a = favList();
+    const i = a.findIndex((x) => x.item && x.item.id === item.id);
+    if (i >= 0) a.splice(i, 1);
+    else a.unshift({ ts: Date.now(), item: slimItem(item) });
+    favSave(a);
+    $$(".fav-btn").forEach((b) => {
+      if (b.dataset.fav !== item.id) return;
+      const on = isFav(item.id);
+      b.classList.toggle("is-on", on);
+      b.textContent = on ? "★" : "☆";
+      b.title = on ? "取消收藏" : "收藏";
+    });
+    const sec = $("#mine");
+    if (sec && sec.classList.contains("is-visible")) renderMine();
+    return i < 0;
+  }
+
   /* ---------- header / meta ---------- */
   $("#issueLine").textContent = `${D.issue} · ${D.dateCN} ${D.weekday}`;
   $("#headline").textContent = D.headline;
@@ -94,6 +151,7 @@
         <div class="meta-row">
           ${(p.tags || []).map((t) => `<span class="chip tag">#${esc(t)}</span>`).join("")}
           <span class="chip">${esc(p.time)}</span>
+          ${starHTML(p.id)}
         </div>
       </div>
       <div class="feature-side">
@@ -119,6 +177,7 @@
           <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 3c2.6 3.2 1.4 5 1.4 6.2 0 1-.6 1.6-1.3 1.6-1 0-1.5-.8-1.4-2.1C9.2 10 8 11.4 8 13.4A4 4 0 0 0 16 13.4C16 9.6 13.6 6.2 12 3z" fill="currentColor" opacity=".9"/><path d="M12 13.2v5" stroke="currentColor" stroke-width="1.5"/></svg>
           ${esc(p.heat)} 源
         </span>
+        ${starHTML(p.id)}
       </div>
       <h3>${esc(p.title)}</h3>
       ${p.summary && p.summary !== "点击查看原文与报道来源。" ? `<p class="card-sum">${esc(p.summary)}</p>` : ""}
@@ -130,7 +189,7 @@
   }
 
   $("#pickedBody").innerHTML =
-    renderFeature(feat) + `<div class="grid">${rest.map(renderCard).join("")}</div>`;
+    (feat ? renderFeature(feat) : "") + `<div class="grid">${rest.map(renderCard).join("")}</div>`;
 
   /* ---------- 热点榜 ---------- */
   function trendMark(t) {
@@ -140,10 +199,11 @@
   }
   $("#hotList").innerHTML = D.hot
     .map((h) => {
+      const hid = h.id || "h" + h.rank;
       const srcs = (h.sources || [])
         .map((s) => `<span class="src">${badge(s.name)}${esc(s.name)}</span>`)
         .join("");
-      return `<div class="hot-item" data-id="h${h.rank}">
+      return `<div class="hot-item" data-id="${esc(hid)}">
         <div class="rank">${String(h.rank).padStart(2, "0")}</div>
         <div class="hot-body">
           <h3 class="hot-title">${esc(h.title)}${h.isNew ? '<span class="new">NEW</span>' : ""}</h3>
@@ -159,6 +219,7 @@
             ${h.heat} 源
           </span>
           ${trendMark(h.trend)}
+          ${starHTML(hid)}
         </div>
       </div>`;
     })
@@ -365,6 +426,36 @@
     if (e.target.closest(".dt-back")) renderDaily(TODAY_VIEW, D.date);
   });
 
+  /* ---------- 我的收藏 ---------- */
+  function renderMine() {
+    const body = $("#mineBody");
+    if (!body) return;
+    const a = favList();
+    if (!a.length) {
+      body.innerHTML = `<p class="mine-empty">还没有收藏。点任意卡片右上角的 ☆ 就会存到这里；只保存在本机，不上传服务器。</p>`;
+      return;
+    }
+    body.innerHTML =
+      `<div class="mine-count">已收藏 ${a.length} 条</div>` +
+      a
+        .map(({ ts, item }) => {
+          const d = new Date(ts || 0);
+          const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          return `<article class="mine-item" data-id="${esc(item.id)}">
+            <div class="mine-main">
+              <div class="meta-row">
+                ${item.kicker ? `<span class="chip tag">${esc(item.kicker)}</span>` : ""}
+                ${item.time ? `<span class="chip">${esc(item.time)}</span>` : ""}
+                <span class="chip">收藏于 ${day}</span>
+              </div>
+              <h3>${esc(item.title)}</h3>
+              ${item.summary ? `<p>${esc(item.summary)}</p>` : ""}
+            </div>
+            <button class="mine-del" data-del="${esc(item.id)}" type="button">移除</button>
+          </article>`;
+        })
+        .join("");
+  }
 
   /* ---------- tabs ---------- */
   const tabs = $$(".tab");
@@ -372,13 +463,14 @@
   function activate(target, push = true) {
     tabs.forEach((t) => t.classList.toggle("is-active", t.dataset.target === target));
     sections.forEach((s) => s.classList.toggle("is-visible", s.id === target));
+    if (target === "mine") renderMine();
     if (push && location.hash !== "#" + target) history.replaceState(null, "", "#" + target);
     window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   }
   tabs.forEach((t) => t.addEventListener("click", () => activate(t.dataset.target)));
   if (location.hash) {
     const target = location.hash.slice(1);
-    if (["picked", "hot", "daily"].includes(target)) activate(target, false);
+    if (["picked", "hot", "daily", "mine"].includes(target)) activate(target, false);
   }
 
   /* ---------- drawer ---------- */
@@ -386,12 +478,17 @@
   const backdrop = $("#backdrop");
   let lastFocus = null;
 
-  function openDrawer(id) {
-    let item = D.picked.find((p) => p.id === id);
-    if (!item && id.startsWith("h")) {
-      const h = D.hot.find((x) => "h" + x.rank === id);
-      if (h) item = { ...h, kicker: h.category, tags: [h.category], time: h.time };
-    }
+  function resolveItem(id) {
+    if (!id) return null;
+    const p = (D.picked || []).find((x) => x.id === id);
+    if (p) return p;
+    const h = (D.hot || []).find((x) => x.id === id || "h" + x.rank === id);
+    if (h) return { ...h, id: h.id || "h" + h.rank, kicker: h.category, tags: [h.category] };
+    const f = favList().find((x) => x.item && x.item.id === id);
+    return f ? f.item : null;
+  }
+
+  function openDrawerItem(item) {
     if (!item) return;
     const srcLinks = (item.sources || [])
       .map(
@@ -404,6 +501,7 @@
         <span class="chip hot">${esc(item.kicker || "精选")}</span>
         ${item.heat ? `<span class="chip">${esc(String(item.heat))} 源报道</span>` : ""}
         <span class="chip">${esc(item.time || "")}</span>
+        ${starHTML(item.id)}
       </div>
       <h2>${esc(item.title)}</h2>
       <div class="d-sec">
@@ -433,13 +531,46 @@
     lastFocus = document.activeElement;
     $("#drawerClose").focus();
   }
+
+  function openDrawer(id) {
+    openDrawerItem(resolveItem(id));
+  }
   function closeDrawer() {
     drawer.hidden = true;
     backdrop.hidden = true;
     document.body.style.overflow = "";
     if (lastFocus) lastFocus.focus();
   }
+
   document.addEventListener("click", (e) => {
+    const fav = e.target.closest(".fav-btn");
+    if (fav) {
+      e.preventDefault();
+      e.stopPropagation();
+      const item = resolveItem(fav.dataset.fav);
+      if (item) toggleFav(item);
+      return;
+    }
+    const del = e.target.closest(".mine-del");
+    if (del) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = del.dataset.del;
+      favSave(favList().filter((x) => x.item && x.item.id !== id));
+      $$(".fav-btn").forEach((b) => {
+        if (b.dataset.fav === id) {
+          b.classList.remove("is-on");
+          b.textContent = "☆";
+        }
+      });
+      renderMine();
+      return;
+    }
+    const mi = e.target.closest(".mine-item");
+    if (mi) {
+      openDrawer(mi.dataset.id);
+      return;
+    }
     const t = e.target.closest(".card, .feature, .hot-item");
     if (t) openDrawer(t.dataset.id);
   });
@@ -455,7 +586,7 @@
     const q = search.value.trim().toLowerCase();
     const active = $(".section.is-visible");
     if (!active) return;
-    const nodes = $$(".card, .feature, .hot-item", active);
+    const nodes = $$(".card, .feature, .hot-item, .mine-item", active);
     let hits = 0;
     nodes.forEach((n) => {
       const ok = !q || n.textContent.toLowerCase().includes(q);

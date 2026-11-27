@@ -1,6 +1,6 @@
 /* 蓄电池热榜 · Service Worker
    静态资源 cache-first；data/ 下的内容 network-first，保证每天更新不被旧缓存挡住 */
-const CACHE = "battery-hot-v6";
+const CACHE = "battery-hot-v7";
 const SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "./assets/css/archive.css",
   "./assets/css/ai.css",
   "./assets/css/pwa.css",
+  "./assets/css/mine.css",
   "./assets/js/app.js",
   "./assets/js/ai.js",
   "./assets/js/pwa.js",
