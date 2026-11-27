@@ -10,6 +10,12 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -55,10 +61,26 @@ jobs:
           if git diff --cached --quiet; then
             echo "安装包无变化"
           else
-            git commit -m "build: 安卓安装包 $(date -u +%Y-%m-%d) v1.0.2"
+            git commit -m "build: 安卓安装包 $(date -u +%Y-%m-%d) $(grep versionName android/app/build.gradle | head -1)"
             for i in 1 2 3; do
               if git push origin HEAD:main; then break; fi
               git pull --rebase --autostash origin main || true
               sleep $((i * 3))
             done
           fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
